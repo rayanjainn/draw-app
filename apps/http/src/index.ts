@@ -1,0 +1,122 @@
+import express, { Request, Response } from "express";
+import jwt from "jsonwebtoken";
+import * as argon from "argon2";
+import { authMiddleware } from "./middlewares/auth";
+import {
+  CreateUserSchema,
+  SigninSchema,
+  CreateRoomSchema,
+} from "@repo/common/types";
+import { JWT_SECRET } from "@repo/backend-config/config";
+import { prisma } from "@repo/db/client";
+
+const app = express();
+app.use(express.json());
+
+app.post("/signup", async (req: Request, res: Response) => {
+  const user = CreateUserSchema.safeParse(req.body);
+
+  if (!user.success) {
+    res.status(411).json({ message: "error in inputs" });
+    return;
+  }
+
+  try {
+    const { email, password, name } = user.data;
+    const hashedPassword = await argon.hash(password);
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name,
+      },
+    });
+    res
+      .status(200)
+      .json({ userId: newUser.id, message: "user created successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err });
+    return;
+  }
+});
+
+app.post("/signin", async (req: Request, res: Response) => {
+  const user = SigninSchema.safeParse(req.body);
+
+  if (!user.success) {
+    res.status(411).json({ message: "error in inputs" });
+    return;
+  }
+
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: {
+        email: user.data.email,
+      },
+    });
+    if (!dbUser) {
+      res.status(401).json({ message: "invalid email" });
+      return;
+    }
+    const validPassword = await argon.verify(
+      dbUser.password,
+      user.data.password
+    );
+    if (!validPassword) {
+      res.status(401).json({ message: "invalid password" });
+      return;
+    }
+    const token = jwt.sign({ userId: dbUser.id }, JWT_SECRET);
+
+    res.status(200).json({ token });
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+    return;
+  }
+});
+
+app.post("/room", authMiddleware, async (req: Request, res: Response) => {
+  const room = CreateRoomSchema.safeParse(req.body);
+
+  if (!room.success) {
+    res.status(411).json({ message: "error in inputs" });
+    return;
+  }
+  try {
+    const userId = req.userId;
+    const newRoom = await prisma.room.create({
+      data: {
+        slug: room.data.name,
+        adminId: userId,
+      },
+    });
+
+    res
+      .status(200)
+      .json({ roomId: newRoom.id, message: "room created successfully" });
+  } catch (e) {
+    res.status(400).json({ message: e });
+  }
+});
+
+app.get(
+  "/chats/:roomId",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    const roomId = Number(req.params.roomId);
+    const chats = await prisma.chat.findMany({
+      where: {
+        roomId: roomId,
+      },
+      orderBy: {
+        id: "desc",
+      },
+      take: 50,
+    });
+    res.json({ chats });
+  }
+);
+
+app.listen(3001, () => {
+  console.log("http server: http://localhost:3001");
+});
