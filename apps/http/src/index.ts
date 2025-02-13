@@ -99,23 +99,33 @@ app.post("/room", authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
-app.get(
-  "/chats/:roomId",
-  authMiddleware,
-  async (req: Request, res: Response) => {
-    const roomId = Number(req.params.roomId);
-    const chats = await prisma.chat.findMany({
-      where: {
-        roomId: roomId,
-      },
-      orderBy: {
-        id: "desc",
-      },
-      take: 50,
-    });
-    res.json({ chats });
+app.get("/chats/:roomId", async (req: Request, res: Response) => {
+  const roomId = Number(req.params.roomId);
+  const chats = await prisma.chat.findMany({
+    where: {
+      roomId: roomId,
+    },
+    orderBy: {
+      id: "desc",
+    },
+    take: 50,
+  });
+  res.json({ chats });
+});
+
+app.get("/room/:slug", async (req: Request, res: Response) => {
+  const slug = req.params.slug;
+  const room = await prisma.room.findUnique({
+    where: {
+      slug,
+    },
+  });
+  if (!room) {
+    res.status(404).json({ message: "room not found" });
+    return;
   }
-);
+  res.json({ room });
+});
 
 app.listen(3001, () => {
   console.log("http server: http://localhost:3001");

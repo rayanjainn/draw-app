@@ -16,7 +16,7 @@ const wss = new WebSocketServer({ port: 8080 });
 const checkUser = (token: string): string | null => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    if (!decoded || !(decoded as JwtPayload).email) {
+    if (!decoded || !(decoded as JwtPayload).userId) {
       return null;
     }
     return (decoded as JwtPayload).userId;
