@@ -38,12 +38,14 @@ wss.on("connection", (ws, req) => {
     ws.close();
     return;
   }
-
-  users.push({
-    ws,
-    rooms: [],
-    userId,
-  });
+  const existingUser = users.find((x) => x.userId === userId);
+  if (!existingUser) {
+    users.push({
+      ws,
+      rooms: [],
+      userId,
+    });
+  }
 
   ws.on("message", async (message) => {
     const parsedData = JSON.parse(message as unknown as string);
@@ -52,7 +54,7 @@ wss.on("connection", (ws, req) => {
       const roomId = parsedData.roomId;
       const roomExists = await prisma.room.findUnique({
         where: {
-          id: roomId,
+          id: Number(roomId),
         },
       });
       if (!roomExists) {
@@ -72,19 +74,32 @@ wss.on("connection", (ws, req) => {
       const roomId = parsedData.roomId;
       const msg = parsedData.message;
 
+      console.log(
+        `Received chat message: ${msg} in room ${roomId} from user ${userId}`
+      );
+
       users.forEach((user) => {
         if (user.rooms.includes(roomId)) {
           user.ws.send(JSON.stringify({ type: "chat", message: msg, roomId }));
         }
       });
 
-      await prisma.chat.create({
-        data: {
-          roomId,
-          message: msg,
-          userId,
-        },
-      });
+      try {
+        await prisma.chat.create({
+          data: {
+            roomId: Number(roomId),
+            message: msg,
+            userId,
+          },
+        });
+        console.log("Message saved to DB successfully.");
+      } catch (error) {
+        console.error("Error saving message to DB:", error);
+      }
     }
+  });
+
+  ws.on("close", () => {
+    users.filter((user) => user.ws !== ws);
   });
 });

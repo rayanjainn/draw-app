@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import * as argon from "argon2";
 import { authMiddleware } from "./middlewares/auth";
+import cors from "cors";
 import {
   CreateUserSchema,
   SigninSchema,
@@ -12,6 +13,7 @@ import { prisma } from "@repo/db/client";
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 app.post("/signup", async (req: Request, res: Response) => {
   const user = CreateUserSchema.safeParse(req.body);
@@ -101,16 +103,16 @@ app.post("/room", authMiddleware, async (req: Request, res: Response) => {
 
 app.get("/chats/:roomId", async (req: Request, res: Response) => {
   const roomId = Number(req.params.roomId);
-  const chats = await prisma.chat.findMany({
-    where: {
-      roomId: roomId,
-    },
-    orderBy: {
-      id: "desc",
-    },
-    take: 50,
-  });
-  res.json({ chats });
+  try {
+    const chats = await prisma.chat.findMany({
+      where: {
+        roomId: roomId,
+      },
+    });
+    res.json({ chats });
+  } catch (e) {
+    res.status(400).json({ message: e });
+  }
 });
 
 app.get("/room/:slug", async (req: Request, res: Response) => {
