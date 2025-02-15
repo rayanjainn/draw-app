@@ -1,6 +1,7 @@
 import { BACKEND_URL } from "@/config";
 import axios from "axios";
 import { type RefObject } from "react";
+import { getExistingShapes } from "./utils";
 
 type Shape =
   | {
@@ -19,6 +20,8 @@ type Shape =
       color: string;
     };
 
+let isIniatilized = false;
+
 export async function initDraw(
   canvasRef: RefObject<HTMLCanvasElement>,
   roomId: string,
@@ -32,7 +35,14 @@ export async function initDraw(
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  //socket.onmessage = null;
+  if (isIniatilized) {
+    clearCanvas(existingShapes, canvas, ctx);
+    console.log("[DEBUG] initDraw already initialized, skipping...");
+    return;
+  }
+  isIniatilized = true;
+
+  socket.onmessage = null;
   socket.onmessage = (e) => {
     const message = JSON.parse(e.data);
     if (message.type === "chat") {
@@ -56,14 +66,14 @@ export async function initDraw(
     };
   }
 
-  canvas.addEventListener("mousedown", (e) => {
+  const mousedown = (e: MouseEvent) => {
     const pos = getMousePos(e);
     isDrawing = true;
     startX = pos.x;
     startY = pos.y;
-  });
+  };
 
-  canvas.addEventListener("mousemove", (e) => {
+  const mousemove = (e: MouseEvent) => {
     if (!isDrawing) return;
 
     const pos = getMousePos(e);
@@ -73,9 +83,9 @@ export async function initDraw(
     clearCanvas(existingShapes, canvas, ctx);
     ctx.strokeStyle = "#ffffff";
     ctx.strokeRect(startX, startY, width, height);
-  });
+  };
 
-  canvas.addEventListener("mouseup", (e) => {
+  const mouseup = (e: MouseEvent) => {
     if (!isDrawing) return;
 
     const pos = getMousePos(e);
@@ -91,6 +101,8 @@ export async function initDraw(
     };
     //existingShapes.push(shape);
 
+    console.log("[DEBUG] Sending shape via WebSocket:", shape);
+
     isDrawing = false;
 
     socket.send(
@@ -100,7 +112,13 @@ export async function initDraw(
         roomId,
       })
     );
-  });
+  };
+
+  canvas.addEventListener("mousedown", mousedown);
+
+  canvas.addEventListener("mousemove", mousemove);
+
+  canvas.addEventListener("mouseup", mouseup);
 
   canvas.addEventListener("mouseleave", () => {
     isDrawing = false;
@@ -121,16 +139,4 @@ function clearCanvas(
       ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
     }
   });
-}
-
-async function getExistingShapes(roomId: string) {
-  const response = await axios.get(`${BACKEND_URL}/chats/${roomId}`);
-  const chats = response.data.chats;
-
-  const shapes = chats.map((ch: { message: string }) => {
-    const chatData = JSON.parse(ch.message);
-    return chatData;
-  });
-
-  return shapes;
 }

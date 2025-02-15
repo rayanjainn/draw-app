@@ -22,7 +22,7 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
       });
       const token = response.data.token;
       localStorage.setItem("token", token);
-      router.push("/canvas/3");
+      router.push("/dashboard");
     } else {
       const response = await axios.post(`${BACKEND_URL}/signup`, {
         email,

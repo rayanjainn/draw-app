@@ -9,80 +9,71 @@ interface User {
   userId: string;
 }
 
-const users: User[] = [];
+let users: User[] = [];
 
 const wss = new WebSocketServer({ port: 8080 });
 
 const checkUser = (token: string): string | null => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    if (!decoded || !(decoded as JwtPayload).userId) {
-      return null;
-    }
-    return (decoded as JwtPayload).userId;
+    return decoded && (decoded as JwtPayload).userId
+      ? (decoded as JwtPayload).userId
+      : null;
   } catch (e) {
-    console.error("Error verifying JWT:", e);
+    console.error("[ERROR] Error verifying JWT:", e);
     return null;
   }
 };
 
 wss.on("connection", (ws, req) => {
   const url = req.url;
-  if (!url) {
-    return;
-  }
+  if (!url) return;
+
   const queryParams = new URLSearchParams(url.split("?")[1]);
   const token = queryParams.get("token") || "";
   const userId = checkUser(token);
+
   if (!userId) {
     ws.close();
     return;
   }
-  const existingUser = users.find((x) => x.userId === userId);
-  if (!existingUser) {
-    users.push({
-      ws,
-      rooms: [],
-      userId,
-    });
-  }
+
+  users.push({
+    ws,
+    rooms: [],
+    userId,
+  });
 
   ws.on("message", async (message) => {
-    const parsedData = JSON.parse(message as unknown as string);
+    const parsedData = JSON.parse(message.toString());
 
     if (parsedData.type === "join") {
       const roomId = parsedData.roomId;
       const roomExists = await prisma.room.findUnique({
-        where: {
-          id: Number(roomId),
-        },
+        where: { id: Number(roomId) },
       });
+
       if (!roomExists) {
         ws.send(JSON.stringify({ type: "error", message: "room not found" }));
         return;
       }
+
       const user = users.find((x) => x.ws === ws);
-      user?.rooms.push(roomId);
+      if (user) {
+        user.rooms.push(roomId);
+      }
     }
 
     if (parsedData.type === "leave") {
       const user = users.find((x) => x.ws === ws);
-      if (!user) return;
-      user.rooms = user?.rooms.filter((x) => x !== parsedData.roomId);
+      if (user) {
+        user.rooms = user.rooms.filter((x) => x !== parsedData.roomId);
+      }
     }
+
     if (parsedData.type === "chat") {
       const roomId = parsedData.roomId;
       const msg = parsedData.message;
-
-      console.log(
-        `Received chat message: ${msg} in room ${roomId} from user ${userId}`
-      );
-
-      users.forEach((user) => {
-        if (user.rooms.includes(roomId)) {
-          user.ws.send(JSON.stringify({ type: "chat", message: msg, roomId }));
-        }
-      });
 
       try {
         await prisma.chat.create({
@@ -92,14 +83,19 @@ wss.on("connection", (ws, req) => {
             userId,
           },
         });
-        console.log("Message saved to DB successfully.");
       } catch (error) {
-        console.error("Error saving message to DB:", error);
+        console.error("[ERROR] Failed to save message to DB:", error);
       }
+
+      users.forEach((user) => {
+        if (user.rooms.includes(roomId)) {
+          user.ws.send(JSON.stringify({ type: "chat", message: msg, roomId }));
+        }
+      });
     }
   });
 
   ws.on("close", () => {
-    users.filter((user) => user.ws !== ws);
+    users = users.filter((x) => x.ws !== ws);
   });
 });

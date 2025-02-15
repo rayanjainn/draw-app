@@ -1,28 +1,35 @@
-"use client";
-import { initDraw } from "@/draw";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Eraser,
-  FolderOpen,
-  Hand,
-  ImageIcon,
-  Lock,
-  Menu,
-  MousePointer2,
-  Pencil,
-  Save,
-  Settings,
-  Shield,
-  Square,
-  Type,
-  Users,
-  X,
-} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Lock,
+  Hand,
+  Square,
+  Circle,
+  MousePointer2,
+  Type,
+  Pencil,
+  Image as ImageIcon,
+  Eraser,
+  Menu,
+  Shield,
+  ChevronUp,
+  X,
+  Settings,
+  Save,
+  FolderOpen,
+  Users,
+  Minus,
+  Plus,
+} from "lucide-react";
+import { Game } from "@/draw/Game";
+
+export type Tool =
+  | "Select"
+  | "Rectangle"
+  | "Circle"
+  | "Text"
+  | "Freehand"
+  | "Image";
 
 const tools = [
   { icon: MousePointer2, name: "Select" },
@@ -32,18 +39,7 @@ const tools = [
   { icon: Pencil, name: "Freehand" },
   { icon: ImageIcon, name: "Image" },
   { icon: Eraser, name: "Eraser" },
-];
-
-const colors = [
-  "#ffffff", // White
-  "#ef4444", // Red
-  "#f97316", // Orange
-  "#eab308", // Yellow
-  "#22c55e", // Green
-  "#3b82f6", // Blue
-  "#8b5cf6", // Violet
-  "#ec4899", // Pink
-];
+] as const;
 
 export function Canvas({
   roomId,
@@ -54,12 +50,17 @@ export function Canvas({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeTool, setActiveTool] = useState("Select");
-  const [activeColor, setActiveColor] = useState("#ffffff");
-  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [activeTool, setActiveTool] = useState<Tool>("Rectangle");
   const [zoom, setZoom] = useState(100);
   const [showTopBar, setShowTopBar] = useState(true);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [game, setGame] = useState<Game | null>(null);
+
+  useEffect(() => {
+    if (game) {
+      game.setTool(activeTool);
+    }
+  }, [activeTool, game]);
 
   useEffect(() => {
     if (canvasRef.current && containerRef.current) {
@@ -68,25 +69,26 @@ export function Canvas({
         if (container && canvasRef.current) {
           canvasRef.current.width = container.clientWidth;
           canvasRef.current.height = container.clientHeight;
-          initDraw(
-            canvasRef as React.RefObject<HTMLCanvasElement>,
-            roomId,
-            socket
-          );
         }
       };
+      const g = new Game(canvasRef.current, roomId, socket);
+
+      g.setZoomCallback((zoom) => {
+        setZoom(zoom);
+      });
+
+      setGame(g);
 
       resizeCanvas();
       window.addEventListener("resize", resizeCanvas);
 
       return () => {
         window.removeEventListener("resize", resizeCanvas);
-        // if (socket) {
-        //   socket.close();
-        // }
+        g.destroy();
+        setGame(null);
       };
     }
-  }, [canvasRef, containerRef, socket]);
+  }, [canvasRef, socket]);
 
   return (
     <div className="h-screen bg-[#121212] flex flex-col">
@@ -230,7 +232,7 @@ export function Canvas({
               key={tool.name}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setActiveTool(tool.name)}
+              onClick={() => setActiveTool(tool.name as Tool)}
               className={`p-3 ${
                 activeTool === tool.name
                   ? "bg-violet-600 text-white"
@@ -261,6 +263,11 @@ export function Canvas({
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               className="p-2 text-gray-400 hover:bg-gray-800 rounded"
+              onClick={() => {
+                if (game) {
+                  game.isPanning = !game.isPanning;
+                }
+              }}
             >
               <Hand className="w-5 h-5" />
             </motion.button>
@@ -271,20 +278,42 @@ export function Canvas({
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               className="p-1 text-gray-400 hover:bg-gray-800 rounded"
-              onClick={() => setZoom(Math.max(25, zoom - 25))}
+              onClick={() => {
+                game?.handleZoom({ deltaY: 100 });
+                const newZoom = Number((100 * game?.scale!).toFixed(0));
+                setZoom(newZoom);
+              }}
             >
-              <ChevronLeft className="w-4 h-4" />
+              <Minus className="w-4 h-4" />
             </motion.button>
-            <div className="text-gray-400 text-sm w-16 text-center">
+
+            <div
+              className="text-gray-400 text-sm w-16 text-center cursor-pointer"
+              onClick={() => {
+                if (game) {
+                  game.offsetX = 0;
+                  game.offsetY = 0;
+                  game.scale = 1;
+                  game.handleZoom({ deltaY: 0 });
+                  setZoom(100);
+                }
+              }}
+              title="Reset zoom"
+            >
               {zoom}%
             </div>
+
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               className="p-1 text-gray-400 hover:bg-gray-800 rounded"
-              onClick={() => setZoom(Math.min(400, zoom + 25))}
+              onClick={() => {
+                game?.handleZoom({ deltaY: -100 });
+                const newZoom = Number((100 * game?.scale!).toFixed(0));
+                setZoom(newZoom);
+              }}
             >
-              <ChevronRight className="w-4 h-4" />
+              <Plus className="w-4 h-4" />
             </motion.button>
           </div>
 

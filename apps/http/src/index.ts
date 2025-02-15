@@ -115,6 +115,16 @@ app.get("/chats/:roomId", async (req: Request, res: Response) => {
   }
 });
 
+app.get("/rooms", authMiddleware, async (req: Request, res: Response) => {
+  const userId = req.userId;
+  const rooms = await prisma.room.findMany({
+    where: {
+      adminId: userId,
+    },
+  });
+  res.json({ rooms });
+});
+
 app.get("/room/:slug", async (req: Request, res: Response) => {
   const slug = req.params.slug;
   const room = await prisma.room.findUnique({
