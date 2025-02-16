@@ -20,6 +20,7 @@ import {
   Users,
   Minus,
   Plus,
+  Eye,
 } from "lucide-react";
 import { Game } from "@/draw/Game";
 
@@ -41,6 +42,17 @@ const tools = [
   { icon: Eraser, name: "Eraser" },
 ] as const;
 
+const colors = [
+  "#ffffff", // White
+  "#ef4444", // Red
+  "#f97316", // Orange
+  "#eab308", // Yellow
+  "#22c55e", // Green
+  "#3b82f6", // Blue
+  "#8b5cf6", // Violet
+  "#ec4899", // Pink
+];
+
 export function Canvas({
   roomId,
   socket,
@@ -50,7 +62,8 @@ export function Canvas({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeTool, setActiveTool] = useState<Tool>("Rectangle");
+  const [activeTool, setActiveTool] = useState<Tool>("Freehand");
+  const [colour, setColour] = useState("#ffffff");
   const [zoom, setZoom] = useState(100);
   const [showTopBar, setShowTopBar] = useState(true);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -59,8 +72,9 @@ export function Canvas({
   useEffect(() => {
     if (game) {
       game.setTool(activeTool);
+      game.setColour(colour);
     }
-  }, [activeTool, game]);
+  }, [activeTool, game, colour]);
 
   useEffect(() => {
     if (canvasRef.current && containerRef.current) {
@@ -243,6 +257,24 @@ export function Canvas({
               <tool.icon className="w-5 h-5" />
             </motion.button>
           ))}
+
+          {/*colour palete and set colour */}
+          <motion.div className="flex gap-2">
+            {colors.map((color, index) => (
+              <motion.button
+                key={color}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setColour(color)}
+                className={`p-2 ${colour === color ? "bg-violet-600" : "hover:bg-gray-800"} text-gray-400  rounded`}
+              >
+                <Circle
+                  className="w-5 h-5 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+              </motion.button>
+            ))}
+          </motion.div>
         </motion.div>
 
         {/* Bottom Bar */}

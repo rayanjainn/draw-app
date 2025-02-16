@@ -32,13 +32,14 @@ export class Game {
   private isDrawing = false;
   private startX = 0;
   private startY = 0;
-  private selectedTool: Tool = "Rectangle";
+  private selectedTool: Tool = "Freehand";
   scale = 1;
   offsetX = 0;
   offsetY = 0;
   isPanning = false;
   private lastX = 0;
   private lastY = 0;
+  private colour = "#ffffff";
   private onZoomChange?: (zoom: number) => void;
 
   constructor(canvas: HTMLCanvasElement, roomId: string, socket: WebSocket) {
@@ -87,6 +88,10 @@ export class Game {
 
   setTool(tool: Tool) {
     this.selectedTool = tool;
+  }
+
+  setColour(colour: string) {
+    this.colour = colour;
   }
 
   initHandlers() {
@@ -154,7 +159,7 @@ export class Game {
       this.existingShapes.push({
         type: "pencil",
         points: [{ x: pos.x, y: pos.y }], // 🔥 Start tracking points
-        color: "#ffffff",
+        color: this.colour,
       });
     }
   };
@@ -177,7 +182,7 @@ export class Game {
         y: this.startY,
         width,
         height,
-        color: "#ffffff",
+        color: this.colour,
       };
     }
 
@@ -187,7 +192,7 @@ export class Game {
         centreX: this.startX,
         centreY: this.startY,
         radius: Math.sqrt(width ** 2 + height ** 2),
-        color: "#ffffff",
+        color: this.colour,
       };
     }
 
@@ -230,7 +235,7 @@ export class Game {
     this.clearCanvas();
 
     // No need to reset transform as clearCanvas already sets it correctly
-    this.ctx.strokeStyle = "#ffffff";
+    this.ctx.strokeStyle = this.colour;
 
     if (this.selectedTool === "Rectangle") {
       this.ctx.strokeRect(this.startX, this.startY, width, height);
