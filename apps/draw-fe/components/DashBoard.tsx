@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { NewDrawingDialog } from "./Dialog";
-import { BACKEND_URL_DEV, FE_URL_DEV } from "@/config";
+import { BACKEND_URL_PROD, FE_URL_PROD } from "@/config";
 import axios from "axios";
 import { useEffect, useState } from "react";
 
@@ -50,7 +50,7 @@ export function Dashboard() {
   const [rooms, setRooms] = useState<Room[]>([]);
 
   const getRooms = async (token: string) => {
-    const response = await axios.get(`${BACKEND_URL_DEV}/rooms`, {
+    const response = await axios.get(`${BACKEND_URL_PROD}/rooms`, {
       headers: {
         Authorization: `${token}`,
       },
@@ -142,7 +142,7 @@ export function Dashboard() {
                 >
                   <div className="relative w-full h-[200px] overflow-hidden">
                     <iframe
-                      src={`${FE_URL_DEV}/canvas/${room.id}`}
+                      src={`${FE_URL_PROD}/canvas/${room.id}`}
                       className="w-full h-full"
                       style={{
                         width: "200%",
