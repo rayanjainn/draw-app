@@ -1,0 +1,24 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [production]
+
+jobs:
+  redeploy_everything:
+    name: Redeploying everything
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v3
+
+      - name: Execute remote SSH commands
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            "cd draw-app && git pull origin main && export PATH=/home/ubuntu/.nvm/versions/node/v23.8.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin && pnpm install && DATABASE_URL=${{ secrets.DATABASE_URL }} npx prisma migrate deploy && DATABASE_URL=${{ secrets.DATABASE_URL }} npx prisma generate && pnpm run build && pm2 restart fe && pm2 restart ws && pm2 restart http"
