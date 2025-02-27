@@ -25,10 +25,10 @@ jobs:
             git pull origin production
             export PATH=/home/ubuntu/.nvm/versions/node/v23.8.0/bin:$PATH
             pnpm install
-            cd ~/packages/db
+            cd ~/draw-app/packages/db
             DATABASE_URL=${{ secrets.DATABASE_URL }} npx prisma migrate deploy
             DATABASE_URL=${{ secrets.DATABASE_URL }} npx prisma generate
-            cd ../..
+            cd ~/draw-app
             pnpm run build
             pm2 restart fe
             pm2 restart ws
