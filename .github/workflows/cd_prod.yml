@@ -21,27 +21,26 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            script: |
-              cd ~/draw-app
-              git fetch origin
-              git checkout production || git checkout -b production origin/production
-              git pull origin production
-              export PATH=/home/ubuntu/.nvm/versions/node/v23.8.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
-              pnpm install
-              
-              cd ~/draw-app/packages/db
-              export DATABASE_URL=${{ secrets.DATABASE_URL }}
-              echo "Running Prisma Migrations..."
-              npx prisma migrate deploy
-              npx prisma generate
-              
-              cd ~/draw-app
-              echo "Building project..."
-              pnpm run build
-              
-              echo "Restarting services..."
-              JWT_SECRET=${{ secrets.JWT_SECRET }} pm2 restart fe --update-env
-              JWT_SECRET=${{ secrets.JWT_SECRET }} pm2 restart ws --update-env
-              JWT_SECRET=${{ secrets.JWT_SECRET }} pm2 restart http --update-env
+            cd ~/draw-app
+            git fetch origin
+            git checkout production || git checkout -b production origin/production
+            git pull origin production
+            export PATH=/home/ubuntu/.nvm/versions/node/v23.8.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+            pnpm install
 
-              echo "Deployment completed successfully!"
+            cd ~/draw-app/packages/db
+            export DATABASE_URL=${{ secrets.DATABASE_URL }}
+            echo "Running Prisma Migrations..."
+            npx prisma migrate deploy
+            npx prisma generate
+
+            cd ~/draw-app
+            echo "Building project..."
+            pnpm run build
+
+            echo "Restarting services..."
+            JWT_SECRET=${{ secrets.JWT_SECRET }} pm2 restart fe --update-env
+            JWT_SECRET=${{ secrets.JWT_SECRET }} pm2 restart ws --update-env
+            JWT_SECRET=${{ secrets.JWT_SECRET }} pm2 restart http --update-env
+
+            echo "Deployment completed successfully!"
