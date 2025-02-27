@@ -21,4 +21,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            "cd draw-app && git pull origin production && export PATH=/home/ubuntu/.nvm/versions/node/v23.8.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin && pnpm install && DATABASE_URL=${{ secrets.DATABASE_URL }} npx prisma migrate deploy && DATABASE_URL=${{ secrets.DATABASE_URL }} npx prisma generate && pnpm run build && pm2 restart fe && pm2 restart ws && pm2 restart http"
+            cd ~/draw-app
+            git pull origin production
+            export PATH=/home/ubuntu/.nvm/versions/node/v23.8.0/bin:$PATH
+            pnpm install
+            DATABASE_URL=${{ secrets.DATABASE_URL }} npx prisma migrate deploy
+            DATABASE_URL=${{ secrets.DATABASE_URL }} npx prisma generate
+            pnpm run build
+            pm2 restart fe
+            pm2 restart ws
+            pm2 restart http
