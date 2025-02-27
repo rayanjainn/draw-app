@@ -26,7 +26,7 @@ jobs:
               git fetch origin
               git checkout production || git checkout -b production origin/production
               git pull origin production
-              export PATH=/home/ubuntu/.nvm/versions/node/v18.17.0/bin:$PATH
+              export PATH=/home/ubuntu/.nvm/versions/node/v23.8.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
               pnpm install
               
               cd ~/draw-app/packages/db
