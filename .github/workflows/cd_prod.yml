@@ -32,6 +32,6 @@ jobs:
             DATABASE_URL=${{ secrets.DATABASE_URL }} npx prisma generate
             cd ~/draw-app
             pnpm run build
-            pm2 restart fe
-            pm2 restart ws
-            pm2 restart http
+            JWT_SECRET=${{ secrets.JWT_SECRET }} pm2 restart fe --update-env
+            JWT_SECRET=${{ secrets.JWT_SECRET }} pm2 restart ws --update-env
+            JWT_SECRET=${{ secrets.JWT_SECRET }} pm2 restart http --update-env
