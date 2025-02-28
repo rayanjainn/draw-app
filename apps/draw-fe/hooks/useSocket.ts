@@ -1,5 +1,5 @@
 "use client";
-import { WS_URL_PROD } from "@/config";
+import { WS_URL_DEV } from "@/config";
 import { useEffect, useState } from "react";
 
 export function useSocket() {
@@ -8,7 +8,7 @@ export function useSocket() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const ws = new WebSocket(`${WS_URL_PROD}?token=${token}`);
+    const ws = new WebSocket(`${WS_URL_DEV}?token=${token}`);
     ws.onopen = () => {
       setLoading(false);
       setSocket(ws);

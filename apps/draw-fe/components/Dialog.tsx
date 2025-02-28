@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { Plus, Users, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BACKEND_URL_PROD } from "@/config";
+import { BACKEND_URL_DEV } from "@/config";
 
 export const NewDrawingDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,12 +24,12 @@ export const NewDrawingDialog = () => {
 
       if (join) {
         const response = await axios.get(
-          `${BACKEND_URL_PROD}/room/${roomName.trim()}`
+          `${BACKEND_URL_DEV}/room/${roomName.trim()}`
         );
         const roomId = response.data.room.id;
         router.push(`/canvas/${roomId}`);
       } else {
-        const response = await axios.post(`${BACKEND_URL_PROD}/room`, {
+        const response = await axios.post(`${BACKEND_URL_DEV}/room`, {
           name: roomName.trim(),
         });
 
