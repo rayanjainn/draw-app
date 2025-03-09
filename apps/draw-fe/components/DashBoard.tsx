@@ -2,7 +2,7 @@
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { NewDrawingDialog } from "./Dialog";
-import { BACKEND_URL_DEV, FE_URL_DEV } from "@/config";
+import { BACKEND_URL_PROD, FE_URL_PROD } from "@/config";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { clearToken, setLoading, setUser } from "@/redux/authSlice";
@@ -46,7 +46,7 @@ export function Dashboard() {
     }
     try {
       if (user?.name === "") {
-        const user = await axios.get(`${BACKEND_URL_DEV}/me`, {
+        const user = await axios.get(`${BACKEND_URL_PROD}/me`, {
           headers: {
             Authorization: `${token}`,
           },
@@ -72,7 +72,7 @@ export function Dashboard() {
   const deleteRoom = async (roomId: string) => {
     dispatch(setLoading(true));
     try {
-      await axios.delete(`${BACKEND_URL_DEV}/room/${roomId}`, {
+      await axios.delete(`${BACKEND_URL_PROD}/room/${roomId}`, {
         headers: {
           Authorization: `${token}`,
         },
@@ -85,7 +85,7 @@ export function Dashboard() {
   };
 
   const getRooms = async (token: string) => {
-    const response = await axios.get(`${BACKEND_URL_DEV}/rooms`, {
+    const response = await axios.get(`${BACKEND_URL_PROD}/rooms`, {
       headers: {
         Authorization: `${token}`,
       },
@@ -155,7 +155,7 @@ export function Dashboard() {
                     onClick={() => router.push(`/canvas/${room.slug}`)}
                   >
                     <iframe
-                      src={`${FE_URL_DEV}/canvas/${room.slug}`}
+                      src={`${FE_URL_PROD}/canvas/${room.slug}`}
                       className="w-full h-full"
                       style={{
                         width: "200%",

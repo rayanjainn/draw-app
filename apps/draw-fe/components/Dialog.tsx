@@ -4,9 +4,8 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { Plus, Users, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSelector } from "react-redux";
 import { useAppSelector } from "@/hooks/reduxHooks";
-import { BACKEND_URL_DEV } from "@/config";
+import { BACKEND_URL_PROD } from "@/config";
 
 export const NewDrawingDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,7 +26,7 @@ export const NewDrawingDialog = () => {
       if (join) {
         router.push(`/canvas/${roomName}`);
       } else {
-        await axios.post(`${BACKEND_URL_DEV}/room`, {
+        await axios.post(`${BACKEND_URL_PROD}/room`, {
           name: roomName.trim(),
         });
         router.push(`/canvas/${roomName}`);

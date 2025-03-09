@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Shapes, Mail, Lock, User } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
-import { BACKEND_URL_DEV } from "@/config";
+import { BACKEND_URL_PROD } from "@/config";
 import { useRouter } from "next/navigation";
 import ThreeBodyLoader from "./Loader";
 import { setLoading, setToken, setUser } from "@/redux/authSlice";
@@ -21,7 +21,7 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
   const signin = async (email: string, password: string) => {
     dispatch(setLoading(true));
     try {
-      const response = await axios.post(`${BACKEND_URL_DEV}/signin`, {
+      const response = await axios.post(`${BACKEND_URL_PROD}/signin`, {
         email,
         password,
       });
@@ -37,7 +37,7 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
   const signup = async (email: string, password: string, name: string) => {
     dispatch(setLoading(true));
     try {
-      await axios.post(`${BACKEND_URL_DEV}/signup`, {
+      await axios.post(`${BACKEND_URL_PROD}/signup`, {
         email,
         password,
         name,
