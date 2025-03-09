@@ -1,7 +1,6 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { a } from "framer-motion/client";
 import { Trash, X } from "lucide-react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
