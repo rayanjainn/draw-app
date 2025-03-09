@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { Plus, Users, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSelector } from "react-redux";
+import { useAppSelector } from "@/hooks/reduxHooks";
 import { BACKEND_URL_DEV } from "@/config";
 
 export const NewDrawingDialog = () => {
@@ -11,6 +13,7 @@ export const NewDrawingDialog = () => {
   const [join, setJoin] = useState(false);
   const [roomName, setRoomName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { token } = useAppSelector((state) => state.auth);
   const router = useRouter();
 
   const handleCreateRoom = async (e: React.FormEvent) => {
@@ -19,22 +22,15 @@ export const NewDrawingDialog = () => {
 
     try {
       setIsLoading(true);
-      const token = localStorage.getItem("token");
       axios.defaults.headers.common["Authorization"] = `${token}`;
 
       if (join) {
-        const response = await axios.get(
-          `${BACKEND_URL_DEV}/room/${roomName.trim()}`
-        );
-        const roomId = response.data.room.id;
-        router.push(`/canvas/${roomId}`);
+        router.push(`/canvas/${roomName}`);
       } else {
-        const response = await axios.post(`${BACKEND_URL_DEV}/room`, {
+        await axios.post(`${BACKEND_URL_DEV}/room`, {
           name: roomName.trim(),
         });
-
-        const roomId = response.data.roomId;
-        router.push(`/canvas/${roomId}`);
+        router.push(`/canvas/${roomName}`);
       }
       setIsOpen(false);
     } catch (error) {
@@ -133,7 +129,13 @@ export const NewDrawingDialog = () => {
                     className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Creating..." : "Create"}
+                    {join
+                      ? isLoading
+                        ? "Joining..."
+                        : "Join"
+                      : isLoading
+                        ? "Creating..."
+                        : "Create"}
                   </motion.button>
                 </div>
               </form>

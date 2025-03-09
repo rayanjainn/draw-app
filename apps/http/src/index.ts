@@ -70,7 +70,23 @@ app.post("/signin", async (req: Request, res: Response) => {
     }
     const token = jwt.sign({ userId: dbUser.id }, JWT_SECRET);
 
-    res.status(200).json({ token });
+    res.status(200).json({ token: token, user: dbUser });
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+    return;
+  }
+});
+
+app.get("/me", authMiddleware, async (req: Request, res: Response) => {
+  const userId = req.userId;
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    res.status(200).json({ user });
   } catch (err) {
     res.status(500).json({ message: "server error" });
     return;
@@ -100,6 +116,43 @@ app.post("/room", authMiddleware, async (req: Request, res: Response) => {
     res.status(400).json({ message: e });
   }
 });
+
+app.delete(
+  "/room/:roomId",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    const roomId = Number(req.params.roomId);
+    try {
+      const room = await prisma.room.findUnique({
+        where: {
+          id: roomId,
+        },
+      });
+
+      if (!room) {
+        res.status(404).json({ message: "room not found" });
+        return;
+      }
+
+      await prisma.chat.deleteMany({
+        where: {
+          roomId: roomId,
+        },
+      });
+
+      await prisma.room.delete({
+        where: {
+          id: roomId,
+        },
+      });
+
+      res.status(200).json({ message: "room deleted successfully" });
+    } catch (e) {
+      console.log(e);
+      res.status(400).json({ message: e });
+    }
+  }
+);
 
 app.get("/chats/:roomId", async (req: Request, res: Response) => {
   const roomId = Number(req.params.roomId);

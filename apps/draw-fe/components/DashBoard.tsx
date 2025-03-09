@@ -1,19 +1,15 @@
 "use client";
 import { motion } from "framer-motion";
-import {
-  Home,
-  Users,
-  Star,
-  Clock,
-  Settings,
-  LogOut,
-  Shapes,
-} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { NewDrawingDialog } from "./Dialog";
 import { BACKEND_URL_DEV, FE_URL_DEV } from "@/config";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { clearToken, setLoading, setUser } from "@/redux/authSlice";
+import ThreeBodyLoader from "./Loader";
+import Sidebar from "./Sidebar";
+import DeleteRoom from "./DeleteRoom";
+import { useAppDispatch, useAppSelector } from "@/hooks/reduxHooks";
 
 type Room = {
   id: string;
@@ -21,14 +17,6 @@ type Room = {
   createdAt: string;
   adminId: string;
 };
-
-const sidebarItems = [
-  { icon: Home, label: "Home", path: "/dashboard" },
-  { icon: Users, label: "Shared with me", path: "/shared" },
-  { icon: Star, label: "Starred", path: "/starred" },
-  { icon: Clock, label: "Recent", path: "/recent" },
-  { icon: Settings, label: "Settings", path: "/settings" },
-];
 
 const months = [
   "Jan",
@@ -48,6 +36,53 @@ const months = [
 export function Dashboard() {
   const router = useRouter();
   const [rooms, setRooms] = useState<Room[]>([]);
+  const dispatch = useAppDispatch();
+  const { user, loading, token } = useAppSelector((state) => state.auth);
+
+  const setDashboard = async () => {
+    if (!token) {
+      router.push("/signin");
+      return;
+    }
+    try {
+      if (user?.name === "") {
+        const user = await axios.get(`${BACKEND_URL_DEV}/me`, {
+          headers: {
+            Authorization: `${token}`,
+          },
+        });
+        dispatch(setUser(user.data.user));
+      }
+    } catch (error) {
+      console.log(error);
+    }
+    dispatch(setLoading(true));
+    getRooms(token).then((rooms) => setRooms(rooms));
+    dispatch(setLoading(false));
+  };
+
+  const logout = () => {
+    dispatch(setLoading(true));
+    dispatch(clearToken());
+    dispatch(setUser(null));
+    dispatch(setLoading(false));
+    router.push("/signin");
+  };
+
+  const deleteRoom = async (roomId: string) => {
+    dispatch(setLoading(true));
+    try {
+      await axios.delete(`${BACKEND_URL_DEV}/room/${roomId}`, {
+        headers: {
+          Authorization: `${token}`,
+        },
+      });
+      setRooms((prevRooms) => prevRooms.filter((r) => r.id !== roomId));
+      dispatch(setLoading(false));
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const getRooms = async (token: string) => {
     const response = await axios.get(`${BACKEND_URL_DEV}/rooms`, {
@@ -72,53 +107,29 @@ export function Dashboard() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-    getRooms(token).then((rooms) => setRooms(rooms));
+    setDashboard();
   }, []);
+
+  if (loading)
+    return (
+      <div className="h-screen bg-[#121212] flex flex-col items-center justify-center">
+        <ThreeBodyLoader />
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-[#121212] flex">
       {/* Sidebar */}
-      <motion.div
-        initial={{ x: -280 }}
-        animate={{ x: 0 }}
-        className="w-72 bg-[#1a1a1a] border-r border-[#2a2a2a] p-6"
-      >
-        <div className="flex items-center gap-2 mb-8">
-          <Shapes className="w-8 h-8 text-violet-500" />
-          <span className="text-xl font-bold text-white">W-Draw</span>
-        </div>
-
-        <div className="space-y-2">
-          {sidebarItems.map((item) => (
-            <motion.button
-              key={item.label}
-              whileHover={{ x: 4 }}
-              onClick={() => router.push(item.path)}
-              className="w-full flex items-center gap-3 px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg"
-            >
-              <item.icon className="w-5 h-5" />
-              {item.label}
-            </motion.button>
-          ))}
-          <hr className="border-[#2a2a2a] my-4" />
-          <motion.button
-            whileHover={{ x: 4 }}
-            onClick={() => router.push("/")}
-            className="w-full flex items-center gap-3 px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg"
-          >
-            <LogOut className="w-5 h-5" />
-            Sign Out
-          </motion.button>
-        </div>
-      </motion.div>
+      <Sidebar onClick={logout} />
 
       {/* Main Content */}
       <div className="flex-1 p-8">
         <div className="max-w-6xl mx-10">
           {/* Header */}
           <div className="flex justify-between items-center mb-10">
+            <div className="text-3xl font-semibold text-white mb-4 ">
+              Welcome <span className="text-violet-500">{user?.name}</span>
+            </div>
             <div className="flex items-center gap-5">
               <NewDrawingDialog />
             </div>
@@ -137,12 +148,14 @@ export function Dashboard() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   whileHover={{ scale: 1.02 }}
-                  onClick={() => router.push(`/canvas/${room.id}`)}
                   className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg overflow-hidden cursor-pointer group"
                 >
-                  <div className="relative w-full h-[200px] overflow-hidden">
+                  <div
+                    className="relative w-full h-[200px] overflow-hidden"
+                    onClick={() => router.push(`/canvas/${room.slug}`)}
+                  >
                     <iframe
-                      src={`${FE_URL_DEV}/canvas/${room.id}`}
+                      src={`${FE_URL_DEV}/canvas/${room.slug}`}
                       className="w-full h-full"
                       style={{
                         width: "200%",
@@ -153,35 +166,28 @@ export function Dashboard() {
                         border: "none",
                       }}
                     />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="absolute inset-0  bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
                       <span className="text-white font-medium">
                         Open Drawing
                       </span>
                     </div>
                   </div>
 
-                  <div className="p-4">
-                    <div className="text-white font-bold mb-1 text-xl">
-                      {room.slug}
+                  <div className="p-4 flex justify-between">
+                    <div>
+                      <div className="text-white font-bold mb-1 text-xl">
+                        {room.slug}
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400 text-md">
+                          {dateToString(room.createdAt)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400 text-md">
-                        {dateToString(room.createdAt)}
-                      </span>
-                    </div>
+                    <DeleteRoom roomId={room.id} deleteRoom={deleteRoom} />
                   </div>
                 </motion.div>
               ))}
-            </div>
-          </div>
-
-          {/* All Drawings */}
-          <div>
-            <h2 className="text-xl font-semibold text-white mb-4">
-              All Drawings
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Similar grid as above, but with all drawings */}
             </div>
           </div>
         </div>

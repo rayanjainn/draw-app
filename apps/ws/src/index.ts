@@ -11,7 +11,7 @@ interface User {
 
 let users: User[] = [];
 
-const wss = new WebSocketServer({ port: 8080 });
+const wss = new WebSocketServer({ port: 3002 });
 
 const checkUser = (token: string): string | null => {
   try {

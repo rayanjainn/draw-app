@@ -7,33 +7,54 @@ import axios from "axios";
 import { BACKEND_URL_DEV } from "@/config";
 import { useRouter } from "next/navigation";
 import ThreeBodyLoader from "./Loader";
+import { setLoading, setToken, setUser } from "@/redux/authSlice";
+import { useAppDispatch, useAppSelector } from "@/hooks/reduxHooks";
 
 export function AuthPage({ isSignin }: { isSignin: boolean }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { loading } = useAppSelector((state) => state.auth);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    if (isSignin) {
+  const signin = async (email: string, password: string) => {
+    dispatch(setLoading(true));
+    try {
       const response = await axios.post(`${BACKEND_URL_DEV}/signin`, {
         email,
         password,
       });
       const token = response.data.token;
-      localStorage.setItem("token", token);
-      setLoading(false);
-      router.push("/dashboard");
-    } else {
+      dispatch(setToken(token));
+      dispatch(setUser(response.data.user));
+      dispatch(setLoading(false));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const signup = async (email: string, password: string, name: string) => {
+    dispatch(setLoading(true));
+    try {
       await axios.post(`${BACKEND_URL_DEV}/signup`, {
         email,
         password,
         name,
       });
-      setLoading(false);
+      dispatch(setLoading(false));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSignin) {
+      await signin(email, password);
+      router.push("/dashboard");
+    } else {
+      await signup(email, password, name);
       router.push("/signin");
     }
   };
