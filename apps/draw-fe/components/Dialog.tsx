@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { Plus, Users, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSelector } from "react-redux";
 import { useAppSelector } from "@/hooks/reduxHooks";
 import { BACKEND_URL_DEV } from "@/config";
 
@@ -72,7 +71,10 @@ export const NewDrawingDialog = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                setIsOpen(false);
+                setJoin(false);
+              }}
               className="fixed inset-0 bg-black/50 z-50"
             />
 
@@ -86,12 +88,15 @@ export const NewDrawingDialog = () => {
               {/* Header */}
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-white">
-                  {join ? "Join Drawing" : "Create New Drawing"}
+                  {join ? "Join Drawing" : "New Drawing"}
                 </h2>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => {
+                    setIsOpen(false);
+                    setJoin(false);
+                  }}
                   className="text-gray-400 hover:text-white"
                 >
                   <X className="w-5 h-5" />
