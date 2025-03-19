@@ -16,7 +16,7 @@ jobs:
       - name: Execute remote SSH commands
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: 3.111.34.204
+          host: 43.204.98.194
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
