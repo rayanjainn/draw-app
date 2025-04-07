@@ -1,5 +1,5 @@
 import { Tool } from "@/components/Canvas";
-import { getExistingShapes } from "./utils";
+import { getExistingShapes, query } from "./utils";
 
 type Shape =
   | {
@@ -19,8 +19,16 @@ type Shape =
     }
   | {
       type: "pencil";
-      points: { x: number; y: number }[]; // 🔥 Store multiple points instead of just start/end
+      points: { x: number; y: number }[];
       color: string;
+    }
+  | {
+      type: "text";
+      x: number;
+      y: number;
+      content: string;
+      color: string;
+      fontSize: number;
     };
 
 export class Game {
@@ -41,6 +49,11 @@ export class Game {
   private lastY = 0;
   private colour = "#ffffff";
   private onZoomChange?: (zoom: number) => void;
+  private isTyping = false;
+  private currentText = "";
+  private textX = 0;
+  private textY = 0;
+  private fontSize = 20;
 
   constructor(canvas: HTMLCanvasElement, roomId: string, socket: WebSocket) {
     this.canvas = canvas;
@@ -79,6 +92,7 @@ export class Game {
     this.canvas.removeEventListener("mousemove", this.panCanvas);
     this.canvas.removeEventListener("mouseup", this.endPan);
     this.canvas.removeEventListener("mouseleave", this.endPan);
+    window.removeEventListener("keydown", this.handleKeyPress);
   }
 
   async init() {
@@ -143,8 +157,18 @@ export class Game {
         }
         this.ctx.stroke();
         this.ctx.closePath();
+      } else if (shape.type === "text") {
+        this.ctx.font = `${shape.fontSize}px Arial`;
+        this.ctx.fillStyle = shape.color;
+        this.ctx.fillText(shape.content, shape.x, shape.y);
       }
     });
+
+    if (this.isTyping) {
+      this.ctx.font = `${this.fontSize}px Arial`;
+      this.ctx.fillStyle = this.colour;
+      this.ctx.fillText(this.currentText + "|", this.textX, this.textY);
+    }
   }
 
   mousedown = (e: MouseEvent) => {
@@ -155,12 +179,21 @@ export class Game {
     this.startX = pos.x;
     this.startY = pos.y;
 
-    if (this.selectedTool === "Freehand") {
+    if (this.selectedTool === "Text") {
+      this.isTyping = true;
+      this.currentText = "";
+      this.textX = pos.x;
+      this.textY = pos.y;
+      this.clearCanvas();
+    } else if (this.selectedTool === "Freehand") {
+      this.isTyping = false;
       this.existingShapes.push({
         type: "pencil",
-        points: [{ x: pos.x, y: pos.y }], // 🔥 Start tracking points
+        points: [{ x: pos.x, y: pos.y }],
         color: this.colour,
       });
+    } else {
+      this.isTyping = false;
     }
   };
 
@@ -260,6 +293,69 @@ export class Game {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
   };
 
+  query = async (prompt: string) => {
+    const response = await query(prompt, this.roomId);
+    if (response === "Incorrect prompt") {
+      alert("Incorrect prompt");
+      return;
+    }
+    const shapes = JSON.parse(response as string);
+
+    shapes.forEach((shape: Shape) => {
+      this.existingShapes.push(shape);
+      this.socket.send(
+        JSON.stringify({
+          type: "chat",
+          message: JSON.stringify(shape),
+          roomId: this.roomId,
+        })
+      );
+      this.clearCanvas();
+    });
+  };
+
+  handleKeyPress = (e: KeyboardEvent) => {
+    if (!this.isTyping) return;
+
+    if (e.key === "Enter") {
+      // Save text shape and stop typing
+      this.existingShapes.push({
+        type: "text",
+        x: this.textX,
+        y: this.textY,
+        content: this.currentText,
+        color: this.colour,
+        fontSize: this.fontSize,
+      });
+
+      // Send text over WebSocket
+      this.socket.send(
+        JSON.stringify({
+          type: "chat",
+          message: JSON.stringify({
+            type: "text",
+            x: this.textX,
+            y: this.textY,
+            content: this.currentText,
+            color: this.colour,
+            fontSize: this.fontSize,
+          }),
+          roomId: this.roomId,
+        })
+      );
+
+      this.isTyping = false;
+      this.currentText = "";
+      this.clearCanvas();
+    } else if (e.key === "Backspace") {
+      this.currentText = this.currentText.slice(0, -1);
+    } else {
+      this.currentText += e.key;
+    }
+
+    this.clearCanvas();
+  };
+
   handleZoom = (e?: WheelEvent | { deltaY: number }) => {
     let deltaY: number;
     if (e instanceof WheelEvent) {
@@ -275,7 +371,7 @@ export class Game {
       return;
     }
 
-    const zoomFactor = 1.1;
+    const zoomFactor = 1.05;
     const scaleFactor = deltaY < 0 ? zoomFactor : 1 / zoomFactor;
 
     const mouseX = (this.canvas.width / 2 - this.offsetX) / this.scale;
@@ -318,15 +414,13 @@ export class Game {
 
   initMouseHandlers() {
     this.canvas.addEventListener("mousedown", this.mousedown);
-
     this.canvas.addEventListener("mouseup", this.mouseup);
-
     this.canvas.addEventListener("mousemove", this.mousemove);
-
     this.canvas.addEventListener("wheel", this.handleZoom);
     this.canvas.addEventListener("mousedown", this.startPan);
     this.canvas.addEventListener("mousemove", this.panCanvas);
     this.canvas.addEventListener("mouseup", this.endPan);
     this.canvas.addEventListener("mouseleave", this.endPan);
+    window.addEventListener("keydown", this.handleKeyPress);
   }
 }

@@ -121,7 +121,10 @@ export const NewDrawingDialog = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     type="button"
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      setIsOpen(false);
+                      setJoin(false);
+                    }}
                     className="px-4 py-2 bg-transparent border border-[#3a3a3a] text-white rounded-lg hover:bg-[#2a2a2a]"
                     disabled={isLoading}
                   >
