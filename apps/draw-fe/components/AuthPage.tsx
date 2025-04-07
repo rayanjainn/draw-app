@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import ThreeBodyLoader from "./Loader";
 import { setLoading, setToken, setUser } from "@/redux/authSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/reduxHooks";
+import { motion } from "framer-motion";
 
 export function AuthPage({ isSignin }: { isSignin: boolean }) {
   const [email, setEmail] = useState("");
@@ -66,25 +67,79 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
       </div>
     );
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        when: "beforeChildren",
+        staggerChildren: 0.1,
+        duration: 0.6,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { type: "spring", stiffness: 300, damping: 24 },
+    },
+  };
+
+  const logoVariants = {
+    hidden: { scale: 0, rotate: -180 },
+    visible: {
+      scale: 1,
+      rotate: 0,
+      transition: { type: "spring", stiffness: 260, damping: 20 },
+    },
+  };
+
+  const buttonVariants = {
+    idle: { scale: 1 },
+    hover: { scale: 1.05, transition: { duration: 0.2 } },
+    tap: { scale: 0.95, transition: { duration: 0.1 } },
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 flex items-center justify-center px-4">
-      <div className="max-w-md w-full space-y-8 bg-gray-800/50 p-8 rounded-xl border border-gray-700">
-        <div className="text-center">
-          <div className="flex justify-center">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 flex items-center justify-center px-4"
+    >
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="max-w-md w-full space-y-8 bg-gray-800/50 p-8 rounded-xl border border-gray-700"
+      >
+        <motion.div className="text-center" variants={itemVariants}>
+          <motion.div className="flex justify-center" variants={logoVariants}>
             <Shapes className="h-12 w-12 text-violet-500" />
-          </div>
-          <h2 className="mt-4 text-3xl font-bold text-white">
+          </motion.div>
+          <motion.h2
+            className="mt-4 text-3xl font-bold text-white"
+            variants={itemVariants}
+          >
             {isSignin ? "Welcome back" : "Create your account"}
-          </h2>
-          <p className="mt-2 text-gray-400">
+          </motion.h2>
+          <motion.p className="mt-2 text-gray-400" variants={itemVariants}>
             {isSignin
               ? "Sign in to continue to W-Draw"
               : "Start your journey with W-Draw"}
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          </motion.p>
+        </motion.div>
+        <motion.form
+          className="mt-8 space-y-6"
+          onSubmit={handleSubmit}
+          variants={containerVariants}
+        >
           {!isSignin && (
-            <div>
+            <motion.div variants={itemVariants}>
               <label
                 htmlFor="name"
                 className="block text-sm font-medium text-gray-300"
@@ -95,7 +150,9 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-gray-500" />
                 </div>
-                <input
+                <motion.input
+                  whileFocus={{ scale: 1.01 }}
+                  transition={{ duration: 0.2 }}
                   id="name"
                   name="name"
                   type="text"
@@ -106,9 +163,9 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
                   placeholder="Name"
                 />
               </div>
-            </div>
+            </motion.div>
           )}
-          <div>
+          <motion.div variants={itemVariants}>
             <label
               htmlFor="email"
               className="block text-sm font-medium text-gray-300"
@@ -119,7 +176,9 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Mail className="h-5 w-5 text-gray-500" />
               </div>
-              <input
+              <motion.input
+                whileFocus={{ scale: 1.01 }}
+                transition={{ duration: 0.2 }}
                 id="email"
                 name="email"
                 type="email"
@@ -130,8 +189,8 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
                 placeholder="you@example.com"
               />
             </div>
-          </div>
-          <div>
+          </motion.div>
+          <motion.div variants={itemVariants}>
             <label
               htmlFor="password"
               className="block text-sm font-medium text-gray-300"
@@ -142,7 +201,9 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-gray-500" />
               </div>
-              <input
+              <motion.input
+                whileFocus={{ scale: 1.01 }}
+                transition={{ duration: 0.2 }}
                 id="password"
                 name="password"
                 type="password"
@@ -153,27 +214,33 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
                 placeholder="••••••••"
               />
             </div>
-          </div>
-          <div>
-            <button
+          </motion.div>
+          <motion.div variants={itemVariants}>
+            <motion.button
+              variants={buttonVariants}
+              initial="idle"
+              whileHover="hover"
+              whileTap="tap"
               type="submit"
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
             >
               {isSignin ? "Sign in" : "Create account"}
-            </button>
-          </div>
-        </form>
-        <div className="text-center">
-          <Link
-            href={isSignin ? "/signup" : "/signin"}
-            className="text-violet-400 hover:text-violet-300 text-sm"
-          >
-            {isSignin
-              ? "Don&apos;t have an account? Sign up"
-              : "Already have an account? Sign in"}
-          </Link>
-        </div>
-      </div>
-    </div>
+            </motion.button>
+          </motion.div>
+        </motion.form>
+        <motion.div className="text-center" variants={itemVariants}>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Link
+              href={isSignin ? "/signup" : "/signin"}
+              className="text-violet-400 hover:text-violet-300 text-sm"
+            >
+              {isSignin
+                ? "Don't have an account? Sign up"
+                : "Already have an account? Sign in"}
+            </Link>
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }

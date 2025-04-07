@@ -64,6 +64,8 @@ export function Canvas({
   const [showTopBar, setShowTopBar] = useState(true);
   const [showSidebar, setShowSidebar] = useState(false);
   const [game, setGame] = useState<Game | null>(null);
+  // const queryRef = useRef<HTMLTextAreaElement>(null);
+  // const [promptLoading, setPromptLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -301,6 +303,35 @@ export function Canvas({
         >
           <PanelLeftOpen className="w-6 h-6" />
         </motion.button>
+
+        {/* Text Input Positioned Directly on the Canvas */}
+        {/* <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2">
+          <textarea
+            className="w-[40vw] bg-transparent text-white text-sm rounded-lg p-3 border border-[#3a3a3a] focus:outline-none focus:ring-2 focus:ring-violet-600 resize-none shadow-lg"
+            placeholder="Type a message..."
+            rows={2}
+            ref={queryRef}
+          />
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            className="absolute right-2 bottom-2 p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg"
+            disabled={promptLoading}
+            onClick={async () => {
+              setPromptLoading(true);
+              const message = queryRef.current?.value.trim();
+              if (message) {
+                await game?.query(message);
+              }
+              if (queryRef.current) {
+                queryRef.current.value = "";
+              }
+              setPromptLoading(false);
+            }}
+          >
+            {promptLoading ? <div>...</div> : <Send className="w-5 h-5" />}
+          </motion.button>
+        </div> */}
 
         {/* Bottom Bar */}
         <motion.div

@@ -71,7 +71,10 @@ export const NewDrawingDialog = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                setIsOpen(false);
+                setJoin(false);
+              }}
               className="fixed inset-0 bg-black/50 z-50"
             />
 
@@ -85,12 +88,15 @@ export const NewDrawingDialog = () => {
               {/* Header */}
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-white">
-                  {join ? "Join Drawing" : "Create New Drawing"}
+                  {join ? "Join Drawing" : "New Drawing"}
                 </h2>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => {
+                    setIsOpen(false);
+                    setJoin(false);
+                  }}
                   className="text-gray-400 hover:text-white"
                 >
                   <X className="w-5 h-5" />
@@ -115,7 +121,10 @@ export const NewDrawingDialog = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     type="button"
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      setIsOpen(false);
+                      setJoin(false);
+                    }}
                     className="px-4 py-2 bg-transparent border border-[#3a3a3a] text-white rounded-lg hover:bg-[#2a2a2a]"
                     disabled={isLoading}
                   >
