@@ -27,8 +27,6 @@ jobs:
             git checkout production || git checkout -b production origin/production
             git reset --hard origin/production
 
-            find . -type d \( -name ".next" -o -name "dist" -o -name "build" -o -name "out" \) -exec rm -rf {} +
-
             export PATH=/home/ubuntu/.nvm/versions/node/v23.8.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
 
             pnpm install
