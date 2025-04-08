@@ -16,16 +16,21 @@ jobs:
       - name: Execute remote SSH commands
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: 3.111.34.204
+          host: 43.204.98.194
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
             cd ~/draw-app
+
             git fetch origin
             git checkout production || git checkout -b production origin/production
-            git pull origin production
+            git reset --hard origin/production
+
+            find . -type d \( -name ".next" -o -name "dist" -o -name "build" -o -name "out" \) -exec rm -rf {} +
+
             export PATH=/home/ubuntu/.nvm/versions/node/v23.8.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+
             pnpm install
 
             cd ~/draw-app/packages/db
